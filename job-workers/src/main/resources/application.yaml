@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: claim-handling-workers
+
+logging:
+  level:
+    io.camunda: INFO
+
+camunda:
+  client:
+    # Defaults to a locally running cluster (c8run / docker-compose), e.g. via the
+    # camunda-c8ctl skill - self-managed mode's own defaults already resolve to
+    # http://localhost:26500 (gRPC) / http://localhost:8080 (REST), so they're left
+    # implicit here rather than repeated (an explicitly set grpc/rest-address would
+    # otherwise also override the SaaS mode's templated URLs below).
+    #
+    # Populate the repo-root .env file (see .env.example) with camunda.client.mode=saas
+    # plus the cloud.* and auth.* values from Camunda Console to point this same app at
+    # a SaaS cluster instead - no code change needed, .env takes precedence over this file.
+    mode: self-managed
+    worker:
+      defaults:
+        max-jobs-active: 16
+        timeout: 30s

@@ -1,0 +1,6 @@
+.DS_Store
+.process-application
+.vscode/settings.json
+.env
+job-workers/target
+job-workers/.github

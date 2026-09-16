@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             id="EmergencyMitigationDefinitions"
+             name="Emergency Mitigation Definitions"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Camunda Modeler"
+             exporterVersion="5.x">
+
+  <decision id="emergencyMitigation" name="Emergency Mitigation">
+    <decisionTable id="decisionTable_emergencyMitigation" hitPolicy="UNIQUE">
+      <input id="input_coverageType" label="Coverage type">
+        <inputExpression id="inputExpression_coverageType" typeRef="string">
+          <text>coverage_type</text>
+        </inputExpression>
+      </input>
+      <input id="input_hazardPresent" label="Mold/structural hazard identified">
+        <inputExpression id="inputExpression_hazardPresent" typeRef="boolean">
+          <text>list contains(hazards_identified, "mold_risk") or list contains(hazards_identified, "structural_damage_potential")</text>
+        </inputExpression>
+      </input>
+      <input id="input_safetyConcern" label="Safety concern">
+        <inputExpression id="inputExpression_safetyConcern" typeRef="boolean">
+          <text>safety_concern</text>
+        </inputExpression>
+      </input>
+      <output id="output_mitigationRequired" label="Mitigation required" name="mitigation_required" typeRef="boolean"/>
+      <output id="output_vendorType" label="Vendor type" name="vendor_type" typeRef="string"/>
+
+      <rule id="rule_water_hazard_safety">
+        <inputEntry id="ie_whs_coverage"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_whs_hazard"><text>true</text></inputEntry>
+        <inputEntry id="ie_whs_safety"><text>true</text></inputEntry>
+        <outputEntry id="oe_whs_required"><text>true</text></outputEntry>
+        <outputEntry id="oe_whs_vendor"><text>"structural_repair"</text></outputEntry>
+      </rule>
+      <rule id="rule_water_hazard_no_safety">
+        <inputEntry id="ie_whns_coverage"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_whns_hazard"><text>true</text></inputEntry>
+        <inputEntry id="ie_whns_safety"><text>false</text></inputEntry>
+        <outputEntry id="oe_whns_required"><text>true</text></outputEntry>
+        <outputEntry id="oe_whns_vendor"><text>"mold_remediation"</text></outputEntry>
+      </rule>
+      <rule id="rule_water_no_hazard">
+        <inputEntry id="ie_wnh_coverage"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_wnh_hazard"><text>false</text></inputEntry>
+        <inputEntry id="ie_wnh_safety"><text>-</text></inputEntry>
+        <outputEntry id="oe_wnh_required"><text>true</text></outputEntry>
+        <outputEntry id="oe_wnh_vendor"><text>"water_extraction"</text></outputEntry>
+      </rule>
+      <rule id="rule_fire">
+        <inputEntry id="ie_fire_coverage"><text>"fire"</text></inputEntry>
+        <inputEntry id="ie_fire_hazard"><text>-</text></inputEntry>
+        <inputEntry id="ie_fire_safety"><text>-</text></inputEntry>
+        <outputEntry id="oe_fire_required"><text>false</text></outputEntry>
+        <outputEntry id="oe_fire_vendor"><text>"none"</text></outputEntry>
+      </rule>
+      <rule id="rule_other_coverage">
+        <inputEntry id="ie_other_coverage"><text>not("water_damage", "fire")</text></inputEntry>
+        <inputEntry id="ie_other_hazard"><text>-</text></inputEntry>
+        <inputEntry id="ie_other_safety"><text>-</text></inputEntry>
+        <outputEntry id="oe_other_required"><text>false</text></outputEntry>
+        <outputEntry id="oe_other_vendor"><text>"none"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_EmergencyMitigation">
+      <dmndi:DMNShape id="DMNShape_emergencyMitigation" dmnElementRef="emergencyMitigation">
+        <dc:Bounds height="80" width="180" x="160" y="100"/>
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

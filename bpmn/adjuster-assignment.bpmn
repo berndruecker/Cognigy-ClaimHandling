@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_AdjusterAssignment" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.49.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="adjusterAssignment" name="Adjuster Assignment" isExecutable="true">
+    <bpmn:documentation>Workflow 4 of 6 in the claim-handling sequence. Routes the claim to an adjuster queue via business rules on region, availability, and satisfaction history. Called from claim-handling.bpmn.</bpmn:documentation>
+    <bpmn:startEvent id="StartEvent_AdjusterAssignment" name="Adjuster assignment requested">
+      <bpmn:outgoing>Flow_ToGetAvailability</bpmn:outgoing>
+    </bpmn:startEvent>
+    <bpmn:serviceTask id="GetAdjusterAvailability" name="Get adjuster availability">
+      <bpmn:documentation>Placeholder — no worker implemented yet. In production this queries adjuster workload/roster systems and sets availability_score (0-100) for the decision below.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="get-adjuster-availability" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToGetAvailability</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToGetSatisfaction</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:serviceTask id="GetCustomerSatisfactionHistory" name="Get customer satisfaction history">
+      <bpmn:documentation>Placeholder — no worker implemented yet. In production this looks up prior CSAT scores for candidate adjusters and sets satisfaction_score (0-100) for the decision below.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="get-customer-satisfaction-history" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToGetSatisfaction</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToRouteToAdjuster</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:businessRuleTask id="RouteToAdjuster" name="Route to adjuster">
+      <bpmn:documentation>The region input is a hardcoded placeholder pending a real policy/address-based region lookup in a later phase.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:ioMapping>
+          <zeebe:input source="=claim.coverage_type" target="coverage_type" />
+          <zeebe:input source="AZ" target="region" />
+        </zeebe:ioMapping>
+        <zeebe:calledDecision decisionId="adjusterAssignment" resultVariable="adjusterAssignment" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToRouteToAdjuster</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToNotifyAdjuster</bpmn:outgoing>
+    </bpmn:businessRuleTask>
+    <bpmn:serviceTask id="NotifyAdjuster" name="Notify adjuster">
+      <bpmn:documentation>Placeholder — no worker implemented yet. In production this notifies the assigned adjuster queue of the new claim.</bpmn:documentation>
+      <bpmn:extensionElements>
+        <zeebe:taskDefinition type="notify-adjuster" retries="3" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToNotifyAdjuster</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEnd</bpmn:outgoing>
+    </bpmn:serviceTask>
+    <bpmn:endEvent id="EndEvent_AdjusterAssignment" name="Adjuster assigned">
+      <bpmn:incoming>Flow_ToEnd</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_ToGetAvailability" sourceRef="StartEvent_AdjusterAssignment" targetRef="GetAdjusterAvailability" />
+    <bpmn:sequenceFlow id="Flow_ToGetSatisfaction" sourceRef="GetAdjusterAvailability" targetRef="GetCustomerSatisfactionHistory" />
+    <bpmn:sequenceFlow id="Flow_ToRouteToAdjuster" sourceRef="GetCustomerSatisfactionHistory" targetRef="RouteToAdjuster" />
+    <bpmn:sequenceFlow id="Flow_ToNotifyAdjuster" sourceRef="RouteToAdjuster" targetRef="NotifyAdjuster" />
+    <bpmn:sequenceFlow id="Flow_ToEnd" sourceRef="NotifyAdjuster" targetRef="EndEvent_AdjusterAssignment" />
+  </bpmn:process>
+  <bpmndi:BPMNDiagram id="BPMNDiagram_AdjusterAssignment">
+    <bpmndi:BPMNPlane id="BPMNPlane_AdjusterAssignment" bpmnElement="adjusterAssignment">
+      <bpmndi:BPMNShape id="StartEvent_AdjusterAssignment_di" bpmnElement="StartEvent_AdjusterAssignment">
+        <dc:Bounds x="152" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GetAdjusterAvailability_di" bpmnElement="GetAdjusterAvailability">
+        <dc:Bounds x="240" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="GetCustomerSatisfactionHistory_di" bpmnElement="GetCustomerSatisfactionHistory">
+        <dc:Bounds x="410" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="RouteToAdjuster_di" bpmnElement="RouteToAdjuster">
+        <dc:Bounds x="600" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="NotifyAdjuster_di" bpmnElement="NotifyAdjuster">
+        <dc:Bounds x="770" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_AdjusterAssignment_di" bpmnElement="EndEvent_AdjusterAssignment">
+        <dc:Bounds x="972" y="102" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="946" y="138" width="88" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToGetAvailability_di" bpmnElement="Flow_ToGetAvailability">
+        <di:waypoint x="188" y="120" />
+        <di:waypoint x="240" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToGetSatisfaction_di" bpmnElement="Flow_ToGetSatisfaction">
+        <di:waypoint x="340" y="120" />
+        <di:waypoint x="410" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToRouteToAdjuster_di" bpmnElement="Flow_ToRouteToAdjuster">
+        <di:waypoint x="510" y="120" />
+        <di:waypoint x="600" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToNotifyAdjuster_di" bpmnElement="Flow_ToNotifyAdjuster">
+        <di:waypoint x="700" y="120" />
+        <di:waypoint x="770" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEnd_di" bpmnElement="Flow_ToEnd">
+        <di:waypoint x="870" y="120" />
+        <di:waypoint x="972" y="120" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

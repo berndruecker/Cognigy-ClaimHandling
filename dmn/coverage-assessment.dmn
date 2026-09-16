@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             xmlns:di="http://www.omg.org/spec/DMN/20180521/DI/"
+             id="CoverageAssessmentDefinitions"
+             name="Coverage Assessment Definitions"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Camunda Modeler"
+             exporterVersion="5.x">
+
+  <!-- Step 1: coverage percentage + deductible, by coverage type and policy tier -->
+  <decision id="coveragePercentage" name="Coverage Percentage">
+    <decisionTable id="decisionTable_coveragePercentage" hitPolicy="UNIQUE">
+      <input id="input_coverageType" label="Coverage type">
+        <inputExpression id="inputExpression_coverageType" typeRef="string">
+          <text>coverage_type</text>
+        </inputExpression>
+      </input>
+      <input id="input_policyTier" label="Policy tier">
+        <inputExpression id="inputExpression_policyTier" typeRef="string">
+          <text>policy_tier</text>
+        </inputExpression>
+      </input>
+      <output id="output_coveragePercentage" label="Coverage %" name="coverage_percentage" typeRef="number"/>
+      <output id="output_deductible" label="Deductible" name="deductible" typeRef="number"/>
+
+      <rule id="rule_water_premium">
+        <inputEntry id="ie_wp_type"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_wp_tier"><text>"premium"</text></inputEntry>
+        <outputEntry id="oe_wp_pct"><text>0.9</text></outputEntry>
+        <outputEntry id="oe_wp_ded"><text>500</text></outputEntry>
+      </rule>
+      <rule id="rule_water_standard">
+        <inputEntry id="ie_ws_type"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_ws_tier"><text>"standard"</text></inputEntry>
+        <outputEntry id="oe_ws_pct"><text>0.75</text></outputEntry>
+        <outputEntry id="oe_ws_ded"><text>750</text></outputEntry>
+      </rule>
+      <rule id="rule_water_basic">
+        <inputEntry id="ie_wb_type"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_wb_tier"><text>"basic"</text></inputEntry>
+        <outputEntry id="oe_wb_pct"><text>0.6</text></outputEntry>
+        <outputEntry id="oe_wb_ded"><text>1000</text></outputEntry>
+      </rule>
+      <rule id="rule_fire_premium">
+        <inputEntry id="ie_fp_type"><text>"fire"</text></inputEntry>
+        <inputEntry id="ie_fp_tier"><text>"premium"</text></inputEntry>
+        <outputEntry id="oe_fp_pct"><text>0.9</text></outputEntry>
+        <outputEntry id="oe_fp_ded"><text>500</text></outputEntry>
+      </rule>
+      <rule id="rule_fire_standard">
+        <inputEntry id="ie_fs_type"><text>"fire"</text></inputEntry>
+        <inputEntry id="ie_fs_tier"><text>"standard"</text></inputEntry>
+        <outputEntry id="oe_fs_pct"><text>0.75</text></outputEntry>
+        <outputEntry id="oe_fs_ded"><text>750</text></outputEntry>
+      </rule>
+      <rule id="rule_fire_basic">
+        <inputEntry id="ie_fb_type"><text>"fire"</text></inputEntry>
+        <inputEntry id="ie_fb_tier"><text>"basic"</text></inputEntry>
+        <outputEntry id="oe_fb_pct"><text>0.6</text></outputEntry>
+        <outputEntry id="oe_fb_ded"><text>1000</text></outputEntry>
+      </rule>
+      <rule id="rule_theft_premium">
+        <inputEntry id="ie_tp_type"><text>"theft"</text></inputEntry>
+        <inputEntry id="ie_tp_tier"><text>"premium"</text></inputEntry>
+        <outputEntry id="oe_tp_pct"><text>0.8</text></outputEntry>
+        <outputEntry id="oe_tp_ded"><text>500</text></outputEntry>
+      </rule>
+      <rule id="rule_theft_standard">
+        <inputEntry id="ie_ts_type"><text>"theft"</text></inputEntry>
+        <inputEntry id="ie_ts_tier"><text>"standard"</text></inputEntry>
+        <outputEntry id="oe_ts_pct"><text>0.65</text></outputEntry>
+        <outputEntry id="oe_ts_ded"><text>750</text></outputEntry>
+      </rule>
+      <rule id="rule_theft_basic">
+        <inputEntry id="ie_tb_type"><text>"theft"</text></inputEntry>
+        <inputEntry id="ie_tb_tier"><text>"basic"</text></inputEntry>
+        <outputEntry id="oe_tb_pct"><text>0.5</text></outputEntry>
+        <outputEntry id="oe_tb_ded"><text>1000</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <!-- Step 2: reserve amount = estimated_loss * coverage_percentage - deductible -->
+  <decision id="reserveAmount" name="Reserve Amount">
+    <informationRequirement id="ir_reserveAmount_coveragePercentage">
+      <requiredDecision href="#coveragePercentage"/>
+    </informationRequirement>
+    <variable id="variable_reserveAmount" name="reserveAmount" typeRef="number"/>
+    <literalExpression id="literalExpression_reserveAmount">
+      <text>estimated_loss * coveragePercentage.coverage_percentage - coveragePercentage.deductible</text>
+    </literalExpression>
+  </decision>
+
+  <!-- Step 3: flag high-value claims -->
+  <decision id="highValueFlag" name="High Value Flag">
+    <informationRequirement id="ir_highValueFlag_reserveAmount">
+      <requiredDecision href="#reserveAmount"/>
+    </informationRequirement>
+    <variable id="variable_highValueFlag" name="highValueFlag" typeRef="boolean"/>
+    <literalExpression id="literalExpression_highValueFlag">
+      <text>reserveAmount > 10000</text>
+    </literalExpression>
+  </decision>
+
+  <!-- Root decision: combine everything into one result for the calling business rule task -->
+  <decision id="coverageAssessment" name="Coverage Assessment">
+    <informationRequirement id="ir_coverageAssessment_coveragePercentage">
+      <requiredDecision href="#coveragePercentage"/>
+    </informationRequirement>
+    <informationRequirement id="ir_coverageAssessment_reserveAmount">
+      <requiredDecision href="#reserveAmount"/>
+    </informationRequirement>
+    <informationRequirement id="ir_coverageAssessment_highValueFlag">
+      <requiredDecision href="#highValueFlag"/>
+    </informationRequirement>
+    <variable id="variable_coverageAssessment" name="coverageAssessment"/>
+    <literalExpression id="literalExpression_coverageAssessment">
+      <text>{
+  coverage_percentage: coveragePercentage.coverage_percentage,
+  deductible: coveragePercentage.deductible,
+  reserve_amount: reserveAmount,
+  high_value_flag: highValueFlag
+}</text>
+    </literalExpression>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_CoverageAssessment">
+      <dmndi:DMNShape id="DMNShape_coveragePercentage" dmnElementRef="coveragePercentage">
+        <dc:Bounds height="80" width="180" x="80" y="260"/>
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="DMNShape_reserveAmount" dmnElementRef="reserveAmount">
+        <dc:Bounds height="80" width="180" x="320" y="260"/>
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="DMNShape_highValueFlag" dmnElementRef="highValueFlag">
+        <dc:Bounds height="80" width="180" x="560" y="260"/>
+      </dmndi:DMNShape>
+      <dmndi:DMNShape id="DMNShape_coverageAssessment" dmnElementRef="coverageAssessment">
+        <dc:Bounds height="80" width="180" x="320" y="100"/>
+      </dmndi:DMNShape>
+      <dmndi:DMNEdge id="DMNEdge_reserveAmount_to_coveragePercentage" dmnElementRef="ir_reserveAmount_coveragePercentage">
+        <di:waypoint x="170" y="260"/>
+        <di:waypoint x="380" y="340"/>
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="DMNEdge_highValueFlag_to_reserveAmount" dmnElementRef="ir_highValueFlag_reserveAmount">
+        <di:waypoint x="410" y="260"/>
+        <di:waypoint x="620" y="340"/>
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="DMNEdge_coverageAssessment_to_coveragePercentage" dmnElementRef="ir_coverageAssessment_coveragePercentage">
+        <di:waypoint x="170" y="260"/>
+        <di:waypoint x="380" y="180"/>
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="DMNEdge_coverageAssessment_to_reserveAmount" dmnElementRef="ir_coverageAssessment_reserveAmount">
+        <di:waypoint x="410" y="260"/>
+        <di:waypoint x="410" y="180"/>
+      </dmndi:DMNEdge>
+      <dmndi:DMNEdge id="DMNEdge_coverageAssessment_to_highValueFlag" dmnElementRef="ir_coverageAssessment_highValueFlag">
+        <di:waypoint x="650" y="260"/>
+        <di:waypoint x="440" y="180"/>
+      </dmndi:DMNEdge>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

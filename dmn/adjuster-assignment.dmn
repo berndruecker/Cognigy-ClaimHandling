@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             id="AdjusterAssignmentDefinitions"
+             name="Adjuster Assignment Definitions"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Camunda Modeler"
+             exporterVersion="5.x">
+
+  <decision id="adjusterAssignment" name="Adjuster Assignment">
+    <decisionTable id="decisionTable_adjusterAssignment" hitPolicy="FIRST">
+      <input id="input_region" label="Region">
+        <inputExpression id="inputExpression_region" typeRef="string">
+          <text>region</text>
+        </inputExpression>
+      </input>
+      <input id="input_coverageType" label="Coverage type">
+        <inputExpression id="inputExpression_coverageType" typeRef="string">
+          <text>coverage_type</text>
+        </inputExpression>
+      </input>
+      <input id="input_availabilityScore" label="Adjuster availability score">
+        <inputExpression id="inputExpression_availabilityScore" typeRef="number">
+          <text>availability_score</text>
+        </inputExpression>
+      </input>
+      <input id="input_satisfactionScore" label="Prior satisfaction score">
+        <inputExpression id="inputExpression_satisfactionScore" typeRef="number">
+          <text>satisfaction_score</text>
+        </inputExpression>
+      </input>
+      <output id="output_adjusterQueue" label="Adjuster queue" name="adjuster_queue" typeRef="string"/>
+      <output id="output_slaHours" label="SLA (hours)" name="sla_hours" typeRef="number"/>
+
+      <rule id="rule_az_water_senior">
+        <inputEntry id="ie_azWaterSenior_region"><text>"AZ"</text></inputEntry>
+        <inputEntry id="ie_azWaterSenior_coverage"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_azWaterSenior_avail"><text><![CDATA[>= 70]]></text></inputEntry>
+        <inputEntry id="ie_azWaterSenior_sat"><text><![CDATA[>= 80]]></text></inputEntry>
+        <outputEntry id="oe_azWaterSenior_queue"><text>"AZ-WATER-DAMAGE-SENIOR"</text></outputEntry>
+        <outputEntry id="oe_azWaterSenior_sla"><text>2</text></outputEntry>
+      </rule>
+      <rule id="rule_az_water_standard">
+        <inputEntry id="ie_azWaterStd_region"><text>"AZ"</text></inputEntry>
+        <inputEntry id="ie_azWaterStd_coverage"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_azWaterStd_avail"><text>-</text></inputEntry>
+        <inputEntry id="ie_azWaterStd_sat"><text>-</text></inputEntry>
+        <outputEntry id="oe_azWaterStd_queue"><text>"AZ-WATER-DAMAGE-STANDARD"</text></outputEntry>
+        <outputEntry id="oe_azWaterStd_sla"><text>4</text></outputEntry>
+      </rule>
+      <rule id="rule_az_general">
+        <inputEntry id="ie_azGeneral_region"><text>"AZ"</text></inputEntry>
+        <inputEntry id="ie_azGeneral_coverage"><text>-</text></inputEntry>
+        <inputEntry id="ie_azGeneral_avail"><text>-</text></inputEntry>
+        <inputEntry id="ie_azGeneral_sat"><text>-</text></inputEntry>
+        <outputEntry id="oe_azGeneral_queue"><text>"AZ-GENERAL"</text></outputEntry>
+        <outputEntry id="oe_azGeneral_sla"><text>6</text></outputEntry>
+      </rule>
+      <rule id="rule_ca_water_senior">
+        <inputEntry id="ie_caWaterSenior_region"><text>"CA"</text></inputEntry>
+        <inputEntry id="ie_caWaterSenior_coverage"><text>"water_damage"</text></inputEntry>
+        <inputEntry id="ie_caWaterSenior_avail"><text><![CDATA[>= 70]]></text></inputEntry>
+        <inputEntry id="ie_caWaterSenior_sat"><text><![CDATA[>= 80]]></text></inputEntry>
+        <outputEntry id="oe_caWaterSenior_queue"><text>"CA-WATER-DAMAGE-SENIOR"</text></outputEntry>
+        <outputEntry id="oe_caWaterSenior_sla"><text>2</text></outputEntry>
+      </rule>
+      <rule id="rule_ca_general">
+        <inputEntry id="ie_caGeneral_region"><text>"CA"</text></inputEntry>
+        <inputEntry id="ie_caGeneral_coverage"><text>-</text></inputEntry>
+        <inputEntry id="ie_caGeneral_avail"><text>-</text></inputEntry>
+        <inputEntry id="ie_caGeneral_sat"><text>-</text></inputEntry>
+        <outputEntry id="oe_caGeneral_queue"><text>"CA-GENERAL"</text></outputEntry>
+        <outputEntry id="oe_caGeneral_sla"><text>6</text></outputEntry>
+      </rule>
+      <rule id="rule_national_default">
+        <inputEntry id="ie_national_region"><text>-</text></inputEntry>
+        <inputEntry id="ie_national_coverage"><text>-</text></inputEntry>
+        <inputEntry id="ie_national_avail"><text>-</text></inputEntry>
+        <inputEntry id="ie_national_sat"><text>-</text></inputEntry>
+        <outputEntry id="oe_national_queue"><text>"NATIONAL-GENERAL-QUEUE"</text></outputEntry>
+        <outputEntry id="oe_national_sla"><text>8</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_AdjusterAssignment">
+      <dmndi:DMNShape id="DMNShape_adjusterAssignment" dmnElementRef="adjusterAssignment">
+        <dc:Bounds height="80" width="180" x="160" y="100"/>
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

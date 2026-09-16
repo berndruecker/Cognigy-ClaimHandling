@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             id="FraudRiskIndicatorsDefinitions"
+             name="Fraud Risk Indicators Definitions"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Camunda Modeler"
+             exporterVersion="5.x">
+
+  <!--
+    Deterministic pre-check only. This table produces a PRELIMINARY risk band from
+    hard signals (fraud database hit, prior-claims pattern, timing anomaly). The final
+    fraudRiskLevel used by the process is set downstream by the LLM-based reasoning
+    step (see fraud-detection.bpmn) which may confirm or escalate this preliminary
+    band using softer signals a decision table can't reason about.
+  -->
+  <decision id="fraudRiskIndicators" name="Fraud Risk Indicators">
+    <decisionTable id="decisionTable_fraudRiskIndicators" hitPolicy="FIRST">
+      <input id="input_fraudDatabaseHit" label="Fraud database hit">
+        <inputExpression id="inputExpression_fraudDatabaseHit" typeRef="boolean">
+          <text>fraud_database_hit</text>
+        </inputExpression>
+      </input>
+      <input id="input_priorClaimsCount" label="Prior claims on property">
+        <inputExpression id="inputExpression_priorClaimsCount" typeRef="number">
+          <text>prior_claims_count</text>
+        </inputExpression>
+      </input>
+      <input id="input_timingAnomalyDays" label="Days between incident and report">
+        <inputExpression id="inputExpression_timingAnomalyDays" typeRef="number">
+          <text>timing_anomaly_days</text>
+        </inputExpression>
+      </input>
+      <output id="output_preliminaryRiskLevel" label="Preliminary risk level" name="preliminary_risk_level" typeRef="string"/>
+
+      <rule id="rule_database_hit">
+        <inputEntry id="ie_dbHit_hit"><text>true</text></inputEntry>
+        <inputEntry id="ie_dbHit_prior"><text>-</text></inputEntry>
+        <inputEntry id="ie_dbHit_timing"><text>-</text></inputEntry>
+        <outputEntry id="oe_dbHit_level"><text>"HIGH"</text></outputEntry>
+      </rule>
+      <rule id="rule_repeat_property">
+        <inputEntry id="ie_repeat_hit"><text>-</text></inputEntry>
+        <inputEntry id="ie_repeat_prior"><text><![CDATA[>= 3]]></text></inputEntry>
+        <inputEntry id="ie_repeat_timing"><text>-</text></inputEntry>
+        <outputEntry id="oe_repeat_level"><text>"HIGH"</text></outputEntry>
+      </rule>
+      <rule id="rule_stale_report">
+        <inputEntry id="ie_stale_hit"><text>-</text></inputEntry>
+        <inputEntry id="ie_stale_prior"><text>-</text></inputEntry>
+        <inputEntry id="ie_stale_timing"><text><![CDATA[> 60]]></text></inputEntry>
+        <outputEntry id="oe_stale_level"><text>"MEDIUM"</text></outputEntry>
+      </rule>
+      <rule id="rule_some_prior_claims">
+        <inputEntry id="ie_someprior_hit"><text>-</text></inputEntry>
+        <inputEntry id="ie_someprior_prior"><text>[1..2]</text></inputEntry>
+        <inputEntry id="ie_someprior_timing"><text>-</text></inputEntry>
+        <outputEntry id="oe_someprior_level"><text>"MEDIUM"</text></outputEntry>
+      </rule>
+      <rule id="rule_default_low">
+        <inputEntry id="ie_default_hit"><text>-</text></inputEntry>
+        <inputEntry id="ie_default_prior"><text>-</text></inputEntry>
+        <inputEntry id="ie_default_timing"><text>-</text></inputEntry>
+        <outputEntry id="oe_default_level"><text>"LOW"</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_FraudRiskIndicators">
+      <dmndi:DMNShape id="DMNShape_fraudRiskIndicators" dmnElementRef="fraudRiskIndicators">
+        <dc:Bounds height="80" width="180" x="160" y="100"/>
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

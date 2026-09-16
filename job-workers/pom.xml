@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-parent</artifactId>
+    <version>4.0.8</version>
+    <relativePath/>
+  </parent>
+
+  <groupId>com.camunda.demo</groupId>
+  <artifactId>claim-handling-workers</artifactId>
+  <version>0.1.0</version>
+  <packaging>jar</packaging>
+
+  <name>claim-handling-workers</name>
+  <description>Job worker implementations for the Cognigy-to-Camunda claim-handling demo</description>
+
+  <properties>
+    <java.version>25</java.version>
+    <camunda.version>8.9.19</camunda.version>
+  </properties>
+
+  <!--
+    Spring Boot 4.0.8's dependency management pins httpclient5 to 5.5.2, which is older than
+    the 5.6.4 that camunda-client-java 8.9.19 compiles against and calls methods from
+    (e.g. HttpAsyncClientBuilder#disableContentCompression), causing a NoSuchMethodError at
+    runtime. Force the version camunda-client-java actually needs.
+  -->
+  <dependencyManagement>
+    <dependencies>
+      <dependency>
+        <groupId>org.apache.httpcomponents.client5</groupId>
+        <artifactId>httpclient5</artifactId>
+        <version>5.6.4</version>
+      </dependency>
+    </dependencies>
+  </dependencyManagement>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.camunda</groupId>
+      <artifactId>camunda-spring-boot-starter</artifactId>
+      <version>${camunda.version}</version>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-compiler-plugin</artifactId>
+        <configuration>
+          <compilerArgs>
+            <arg>-parameters</arg>
+          </compilerArgs>
+        </configuration>
+      </plugin>
+    </plugins>
+  </build>
+
+</project>

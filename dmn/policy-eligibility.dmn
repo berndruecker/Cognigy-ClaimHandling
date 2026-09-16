@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="https://www.omg.org/spec/DMN/20191111/MODEL/"
+             xmlns:dmndi="https://www.omg.org/spec/DMN/20191111/DMNDI/"
+             xmlns:dc="http://www.omg.org/spec/DMN/20180521/DC/"
+             id="PolicyEligibilityDefinitions"
+             name="Policy Eligibility Definitions"
+             namespace="http://camunda.org/schema/1.0/dmn"
+             exporter="Camunda Modeler"
+             exporterVersion="5.x">
+
+  <decision id="policyEligibility" name="Policy Eligibility">
+    <decisionTable id="decisionTable_policyEligibility" hitPolicy="UNIQUE">
+      <input id="input_policyStatus" label="Policy status">
+        <inputExpression id="inputExpression_policyStatus" typeRef="string">
+          <text>policy_status</text>
+        </inputExpression>
+      </input>
+      <input id="input_coverageType" label="Coverage type">
+        <inputExpression id="inputExpression_coverageType" typeRef="string">
+          <text>coverage_type</text>
+        </inputExpression>
+      </input>
+      <input id="input_exclusionsApply" label="Exclusions apply">
+        <inputExpression id="inputExpression_exclusionsApply" typeRef="boolean">
+          <text>exclusions_apply</text>
+        </inputExpression>
+      </input>
+      <output id="output_eligibility" label="Eligibility" name="eligibility" typeRef="string"/>
+      <output id="output_reason" label="Reason" name="reason" typeRef="string"/>
+
+      <rule id="rule_lapsed">
+        <inputEntry id="inputEntry_lapsed_status"><text>"LAPSED"</text></inputEntry>
+        <inputEntry id="inputEntry_lapsed_coverage"><text>-</text></inputEntry>
+        <inputEntry id="inputEntry_lapsed_exclusions"><text>-</text></inputEntry>
+        <outputEntry id="outputEntry_lapsed_eligibility"><text>"LAPSED"</text></outputEntry>
+        <outputEntry id="outputEntry_lapsed_reason"><text>"Policy is lapsed."</text></outputEntry>
+      </rule>
+
+      <rule id="rule_cancelled">
+        <inputEntry id="inputEntry_cancelled_status"><text>"CANCELLED"</text></inputEntry>
+        <inputEntry id="inputEntry_cancelled_coverage"><text>-</text></inputEntry>
+        <inputEntry id="inputEntry_cancelled_exclusions"><text>-</text></inputEntry>
+        <outputEntry id="outputEntry_cancelled_eligibility"><text>"LAPSED"</text></outputEntry>
+        <outputEntry id="outputEntry_cancelled_reason"><text>"Policy has been cancelled."</text></outputEntry>
+      </rule>
+
+      <rule id="rule_active_excluded">
+        <inputEntry id="inputEntry_activeExcl_status"><text>"ACTIVE"</text></inputEntry>
+        <inputEntry id="inputEntry_activeExcl_coverage"><text>-</text></inputEntry>
+        <inputEntry id="inputEntry_activeExcl_exclusions"><text>true</text></inputEntry>
+        <outputEntry id="outputEntry_activeExcl_eligibility"><text>"EXCLUDED"</text></outputEntry>
+        <outputEntry id="outputEntry_activeExcl_reason"><text>"Coverage type " + coverage_type + " is excluded by the policy terms."</text></outputEntry>
+      </rule>
+
+      <rule id="rule_active_valid">
+        <inputEntry id="inputEntry_activeValid_status"><text>"ACTIVE"</text></inputEntry>
+        <inputEntry id="inputEntry_activeValid_coverage"><text>-</text></inputEntry>
+        <inputEntry id="inputEntry_activeValid_exclusions"><text>false</text></inputEntry>
+        <outputEntry id="outputEntry_activeValid_eligibility"><text>"VALID"</text></outputEntry>
+        <outputEntry id="outputEntry_activeValid_reason"><text>"Policy is active and covers claim type " + coverage_type + "."</text></outputEntry>
+      </rule>
+    </decisionTable>
+  </decision>
+
+  <dmndi:DMNDI>
+    <dmndi:DMNDiagram id="DMNDiagram_PolicyEligibility">
+      <dmndi:DMNShape id="DMNShape_policyEligibility" dmnElementRef="policyEligibility">
+        <dc:Bounds height="80" width="180" x="160" y="100"/>
+      </dmndi:DMNShape>
+    </dmndi:DMNDiagram>
+  </dmndi:DMNDI>
+</definitions>

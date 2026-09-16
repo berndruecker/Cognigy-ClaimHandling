@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI" xmlns:dc="http://www.omg.org/spec/DD/20100524/DC" xmlns:di="http://www.omg.org/spec/DD/20100524/DI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:zeebe="http://camunda.org/schema/zeebe/1.0" xmlns:modeler="http://camunda.org/schema/modeler/1.0" id="Definitions_ClaimHandling" targetNamespace="http://bpmn.io/schema/bpmn" exporter="Camunda Modeler" exporterVersion="5.49.0" modeler:executionPlatform="Camunda Cloud" modeler:executionPlatformVersion="8.8.0">
+  <bpmn:process id="claimHandling" name="Claim Handling" isExecutable="true">
+    <bpmn:documentation>Root orchestrator for the Cognigy -&gt; Camunda claim-handling demo. Started by the claim_initiated webhook event; works through the six workflows in sequence: policy validation, coverage assessment, fraud detection, adjuster assignment, emergency response coordination, communication &amp; documentation.</bpmn:documentation>
+    <bpmn:startEvent id="StartEvent_ClaimInitiated" name="Claim initiated">
+      <bpmn:documentation>Triggered by Cognigy's REST webhook (event claim_initiated). Message payload seeds the process variables customer, claim, and conversation per the shape documented in CLAUDE.md.</bpmn:documentation>
+      <bpmn:outgoing>Flow_ToValidatePolicy</bpmn:outgoing>
+      <bpmn:messageEventDefinition id="MessageEventDefinition_ClaimInitiated" messageRef="Message_ClaimInitiated" />
+    </bpmn:startEvent>
+    <bpmn:exclusiveGateway id="PolicyValidGateway" name="Policy valid?" default="Flow_ToHumanPolicyReview">
+      <bpmn:incoming>Flow_ToPolicyValidGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAssessCoverage</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToHumanPolicyReview</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="HumanPolicyReview" name="Human policy review">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:assignmentDefinition candidateGroups="policy-review-team" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToHumanPolicyReview</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEndEscalated</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:endEvent id="EndEvent_ClaimEscalated" name="Claim escalated">
+      <bpmn:incoming>Flow_ToEndEscalated</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:callActivity id="AssessCoverage" name="Assess coverage">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="coverageAssessment" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_11qvt59</bpmn:incoming>
+      <bpmn:outgoing>Flow_0xzcoyn</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:callActivity id="DetectFraud" name="Detect fraud">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="fraudDetection" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1qe85ql</bpmn:incoming>
+      <bpmn:outgoing>Flow_1al3em9</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:exclusiveGateway id="FraudRiskGateway" name="Fraud risk?" default="Flow_ToFraudClearedJoin">
+      <bpmn:incoming>Flow_0yhz1tt</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToFraudAnalystReview</bpmn:outgoing>
+      <bpmn:outgoing>Flow_ToFraudClearedJoin</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:userTask id="FraudAnalystReview" name="Fraud analyst review">
+      <bpmn:extensionElements>
+        <zeebe:userTask />
+        <zeebe:assignmentDefinition candidateGroups="fraud-analysts" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToFraudAnalystReview</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToFraudConfirmedGateway</bpmn:outgoing>
+    </bpmn:userTask>
+    <bpmn:exclusiveGateway id="FraudConfirmedGateway" name="Fraud confirmed?" default="Flow_FraudCleared">
+      <bpmn:incoming>Flow_ToFraudConfirmedGateway</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEndDenied</bpmn:outgoing>
+      <bpmn:outgoing>Flow_FraudCleared</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:endEvent id="EndEvent_ClaimDeniedFraud" name="Claim denied – fraud confirmed">
+      <bpmn:incoming>Flow_ToEndDenied</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:exclusiveGateway id="FraudClearedJoinGateway">
+      <bpmn:incoming>Flow_ToFraudClearedJoin</bpmn:incoming>
+      <bpmn:incoming>Flow_FraudCleared</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToAssignAdjuster</bpmn:outgoing>
+    </bpmn:exclusiveGateway>
+    <bpmn:callActivity id="AssignAdjuster" name="Assign adjuster">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="adjusterAssignment" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_01fn4ud</bpmn:incoming>
+      <bpmn:outgoing>Flow_0vibj11</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:callActivity id="CoordinateEmergencyResponse" name="Coordinate emergency response">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="emergencyResponseCoordination" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_16qljvj</bpmn:incoming>
+      <bpmn:outgoing>Flow_1ap0g6s</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:callActivity id="CommunicateAndDocument" name="Communicate &#38; document">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="communicationDocumentation" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_1w56b54</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToEndComplete</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:endEvent id="EndEvent_ClaimProcessingComplete" name="Claim processing complete">
+      <bpmn:incoming>Flow_ToEndComplete</bpmn:incoming>
+    </bpmn:endEvent>
+    <bpmn:sequenceFlow id="Flow_ToValidatePolicy" sourceRef="StartEvent_ClaimInitiated" targetRef="ValidatePolicy" />
+    <bpmn:sequenceFlow id="Flow_ToPolicyValidGateway" sourceRef="ValidatePolicy" targetRef="PolicyValidGateway" />
+    <bpmn:sequenceFlow id="Flow_ToAssessCoverage" name="Valid" sourceRef="PolicyValidGateway" targetRef="Gateway_0nx7abv">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=policyEligibility.eligibility = "VALID"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToHumanPolicyReview" name="Lapsed / excluded" sourceRef="PolicyValidGateway" targetRef="HumanPolicyReview" />
+    <bpmn:sequenceFlow id="Flow_ToEndEscalated" sourceRef="HumanPolicyReview" targetRef="EndEvent_ClaimEscalated" />
+    <bpmn:sequenceFlow id="Flow_ToFraudAnalystReview" name="High risk" sourceRef="FraudRiskGateway" targetRef="FraudAnalystReview">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=fraudRiskLevel = "HIGH"</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_ToFraudClearedJoin" name="Low / medium risk" sourceRef="FraudRiskGateway" targetRef="FraudClearedJoinGateway" />
+    <bpmn:sequenceFlow id="Flow_ToFraudConfirmedGateway" sourceRef="FraudAnalystReview" targetRef="FraudConfirmedGateway" />
+    <bpmn:sequenceFlow id="Flow_ToEndDenied" name="Confirmed" sourceRef="FraudConfirmedGateway" targetRef="EndEvent_ClaimDeniedFraud">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">=fraudConfirmed = true</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+    <bpmn:sequenceFlow id="Flow_FraudCleared" name="Cleared" sourceRef="FraudConfirmedGateway" targetRef="FraudClearedJoinGateway" />
+    <bpmn:sequenceFlow id="Flow_ToAssignAdjuster" sourceRef="FraudClearedJoinGateway" targetRef="Gateway_11pjx5h" />
+    <bpmn:sequenceFlow id="Flow_ToEndComplete" sourceRef="CommunicateAndDocument" targetRef="EndEvent_ClaimProcessingComplete" />
+    <bpmn:callActivity id="ValidatePolicy" name="Policy Validation">
+      <bpmn:extensionElements>
+        <zeebe:calledElement processId="policyValidation" propagateAllChildVariables="false" />
+      </bpmn:extensionElements>
+      <bpmn:incoming>Flow_ToValidatePolicy</bpmn:incoming>
+      <bpmn:outgoing>Flow_ToPolicyValidGateway</bpmn:outgoing>
+    </bpmn:callActivity>
+    <bpmn:sequenceFlow id="Flow_11qvt59" sourceRef="Gateway_0nx7abv" targetRef="AssessCoverage" />
+    <bpmn:parallelGateway id="Gateway_0nx7abv">
+      <bpmn:incoming>Flow_ToAssessCoverage</bpmn:incoming>
+      <bpmn:outgoing>Flow_11qvt59</bpmn:outgoing>
+      <bpmn:outgoing>Flow_1qe85ql</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:sequenceFlow id="Flow_0yhz1tt" sourceRef="Gateway_0axael2" targetRef="FraudRiskGateway" />
+    <bpmn:parallelGateway id="Gateway_0axael2">
+      <bpmn:incoming>Flow_1al3em9</bpmn:incoming>
+      <bpmn:incoming>Flow_0xzcoyn</bpmn:incoming>
+      <bpmn:outgoing>Flow_0yhz1tt</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:sequenceFlow id="Flow_1qe85ql" sourceRef="Gateway_0nx7abv" targetRef="DetectFraud" />
+    <bpmn:sequenceFlow id="Flow_1al3em9" sourceRef="DetectFraud" targetRef="Gateway_0axael2" />
+    <bpmn:sequenceFlow id="Flow_0xzcoyn" sourceRef="AssessCoverage" targetRef="Gateway_0axael2" />
+    <bpmn:sequenceFlow id="Flow_01fn4ud" sourceRef="Gateway_11pjx5h" targetRef="AssignAdjuster" />
+    <bpmn:parallelGateway id="Gateway_11pjx5h">
+      <bpmn:incoming>Flow_ToAssignAdjuster</bpmn:incoming>
+      <bpmn:outgoing>Flow_01fn4ud</bpmn:outgoing>
+      <bpmn:outgoing>Flow_16qljvj</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:parallelGateway id="Gateway_04p66bq">
+      <bpmn:incoming>Flow_1ap0g6s</bpmn:incoming>
+      <bpmn:incoming>Flow_0vibj11</bpmn:incoming>
+      <bpmn:outgoing>Flow_1w56b54</bpmn:outgoing>
+    </bpmn:parallelGateway>
+    <bpmn:sequenceFlow id="Flow_1w56b54" sourceRef="Gateway_04p66bq" targetRef="CommunicateAndDocument" />
+    <bpmn:sequenceFlow id="Flow_1ap0g6s" sourceRef="CoordinateEmergencyResponse" targetRef="Gateway_04p66bq" />
+    <bpmn:sequenceFlow id="Flow_0vibj11" sourceRef="AssignAdjuster" targetRef="Gateway_04p66bq" />
+    <bpmn:sequenceFlow id="Flow_16qljvj" sourceRef="Gateway_11pjx5h" targetRef="CoordinateEmergencyResponse" />
+  </bpmn:process>
+  <bpmn:message id="Message_ClaimInitiated" name="claim_initiated" />
+  <bpmndi:BPMNDiagram id="BPMNDiagram_ClaimHandling">
+    <bpmndi:BPMNPlane id="BPMNPlane_ClaimHandling" bpmnElement="claimHandling">
+      <bpmndi:BPMNShape id="StartEvent_ClaimInitiated_di" bpmnElement="StartEvent_ClaimInitiated">
+        <dc:Bounds x="152" y="192" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="135" y="228" width="70" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="PolicyValidGateway_di" bpmnElement="PolicyValidGateway" isMarkerVisible="true">
+        <dc:Bounds x="390" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="384" y="161" width="62" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="HumanPolicyReview_di" bpmnElement="HumanPolicyReview">
+        <dc:Bounds x="365" y="350" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Activity_04xiqy7_di" bpmnElement="ValidatePolicy">
+        <dc:Bounds x="240" y="170" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ClaimEscalated_di" bpmnElement="EndEvent_ClaimEscalated">
+        <dc:Bounds x="542" y="372" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="521" y="408" width="79" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0vacup8_di" bpmnElement="Gateway_0nx7abv">
+        <dc:Bounds x="565" y="185" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AssessCoverage_di" bpmnElement="AssessCoverage">
+        <dc:Bounds x="680" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="DetectFraud_di" bpmnElement="DetectFraud">
+        <dc:Bounds x="680" y="260" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FraudRiskGateway_di" bpmnElement="FraudRiskGateway" isMarkerVisible="true">
+        <dc:Bounds x="920" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="917" y="161" width="56" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FraudAnalystReview_di" bpmnElement="FraudAnalystReview">
+        <dc:Bounds x="920" y="350" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FraudConfirmedGateway_di" bpmnElement="FraudConfirmedGateway" isMarkerVisible="true">
+        <dc:Bounds x="1070" y="365" width="50" height="50" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1052" y="415" width="87" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="FraudClearedJoinGateway_di" bpmnElement="FraudClearedJoinGateway" isMarkerVisible="true">
+        <dc:Bounds x="1070" y="185" width="50" height="50" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_00cf879_di" bpmnElement="Gateway_0axael2">
+        <dc:Bounds x="835" y="185" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ClaimDeniedFraud_di" bpmnElement="EndEvent_ClaimDeniedFraud">
+        <dc:Bounds x="1212" y="372" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1192" y="408" width="77" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0jfmnts_di" bpmnElement="Gateway_11pjx5h">
+        <dc:Bounds x="1195" y="185" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="AssignAdjuster_di" bpmnElement="AssignAdjuster">
+        <dc:Bounds x="1300" y="80" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CoordinateEmergencyResponse_di" bpmnElement="CoordinateEmergencyResponse">
+        <dc:Bounds x="1300" y="240" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="CommunicateAndDocument_di" bpmnElement="CommunicateAndDocument">
+        <dc:Bounds x="1570" y="170" width="100" height="80" />
+        <bpmndi:BPMNLabel />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="EndEvent_ClaimProcessingComplete_di" bpmnElement="EndEvent_ClaimProcessingComplete">
+        <dc:Bounds x="1720" y="192" width="36" height="36" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1696" y="228" width="85" height="27" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNShape id="Gateway_0hm33bh_di" bpmnElement="Gateway_04p66bq">
+        <dc:Bounds x="1455" y="185" width="50" height="50" />
+      </bpmndi:BPMNShape>
+      <bpmndi:BPMNEdge id="Flow_ToValidatePolicy_di" bpmnElement="Flow_ToValidatePolicy">
+        <di:waypoint x="188" y="210" />
+        <di:waypoint x="240" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToPolicyValidGateway_di" bpmnElement="Flow_ToPolicyValidGateway">
+        <di:waypoint x="340" y="210" />
+        <di:waypoint x="390" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToAssessCoverage_di" bpmnElement="Flow_ToAssessCoverage">
+        <di:waypoint x="440" y="210" />
+        <di:waypoint x="565" y="210" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="498" y="185" width="24" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToHumanPolicyReview_di" bpmnElement="Flow_ToHumanPolicyReview">
+        <di:waypoint x="415" y="235" />
+        <di:waypoint x="415" y="350" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="425" y="290" width="90" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEndEscalated_di" bpmnElement="Flow_ToEndEscalated">
+        <di:waypoint x="465" y="390" />
+        <di:waypoint x="542" y="390" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToFraudAnalystReview_di" bpmnElement="Flow_ToFraudAnalystReview">
+        <di:waypoint x="945" y="235" />
+        <di:waypoint x="945" y="350" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="948" y="283" width="43" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToFraudClearedJoin_di" bpmnElement="Flow_ToFraudClearedJoin">
+        <di:waypoint x="970" y="210" />
+        <di:waypoint x="1070" y="210" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="976" y="185" width="89" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToFraudConfirmedGateway_di" bpmnElement="Flow_ToFraudConfirmedGateway">
+        <di:waypoint x="1020" y="390" />
+        <di:waypoint x="1070" y="390" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEndDenied_di" bpmnElement="Flow_ToEndDenied">
+        <di:waypoint x="1120" y="390" />
+        <di:waypoint x="1212" y="390" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1141" y="365" width="51" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_FraudCleared_di" bpmnElement="Flow_FraudCleared">
+        <di:waypoint x="1095" y="365" />
+        <di:waypoint x="1095" y="235" />
+        <bpmndi:BPMNLabel>
+          <dc:Bounds x="1091" y="290" width="39" height="14" />
+        </bpmndi:BPMNLabel>
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToAssignAdjuster_di" bpmnElement="Flow_ToAssignAdjuster">
+        <di:waypoint x="1120" y="210" />
+        <di:waypoint x="1195" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_ToEndComplete_di" bpmnElement="Flow_ToEndComplete">
+        <di:waypoint x="1670" y="210" />
+        <di:waypoint x="1720" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_11qvt59_di" bpmnElement="Flow_11qvt59">
+        <di:waypoint x="590" y="185" />
+        <di:waypoint x="590" y="120" />
+        <di:waypoint x="680" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0yhz1tt_di" bpmnElement="Flow_0yhz1tt">
+        <di:waypoint x="885" y="210" />
+        <di:waypoint x="920" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1qe85ql_di" bpmnElement="Flow_1qe85ql">
+        <di:waypoint x="590" y="235" />
+        <di:waypoint x="590" y="300" />
+        <di:waypoint x="680" y="300" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1al3em9_di" bpmnElement="Flow_1al3em9">
+        <di:waypoint x="780" y="300" />
+        <di:waypoint x="860" y="300" />
+        <di:waypoint x="860" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0xzcoyn_di" bpmnElement="Flow_0xzcoyn">
+        <di:waypoint x="780" y="120" />
+        <di:waypoint x="860" y="120" />
+        <di:waypoint x="860" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_01fn4ud_di" bpmnElement="Flow_01fn4ud">
+        <di:waypoint x="1220" y="185" />
+        <di:waypoint x="1220" y="120" />
+        <di:waypoint x="1300" y="120" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1w56b54_di" bpmnElement="Flow_1w56b54">
+        <di:waypoint x="1505" y="210" />
+        <di:waypoint x="1570" y="210" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_1ap0g6s_di" bpmnElement="Flow_1ap0g6s">
+        <di:waypoint x="1400" y="280" />
+        <di:waypoint x="1480" y="280" />
+        <di:waypoint x="1480" y="235" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_0vibj11_di" bpmnElement="Flow_0vibj11">
+        <di:waypoint x="1400" y="120" />
+        <di:waypoint x="1480" y="120" />
+        <di:waypoint x="1480" y="185" />
+      </bpmndi:BPMNEdge>
+      <bpmndi:BPMNEdge id="Flow_16qljvj_di" bpmnElement="Flow_16qljvj">
+        <di:waypoint x="1220" y="235" />
+        <di:waypoint x="1220" y="280" />
+        <di:waypoint x="1300" y="280" />
+      </bpmndi:BPMNEdge>
+    </bpmndi:BPMNPlane>
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>
