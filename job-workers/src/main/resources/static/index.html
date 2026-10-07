@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Adjuster confirmation</title>
+  <style>
+    body { font-family: sans-serif; max-width: 480px; margin: 3rem auto; }
+    button { font-size: 1.1rem; padding: .6rem 1.2rem; }
+    pre { background: #f4f4f4; padding: .8rem; }
+  </style>
+</head>
+<body>
+  <h1>Adjuster confirmation</h1>
+  <p>This interface allows you to confirm all claims waiting for the adjuster assignment in the demo.</p>
+  <p>Waiting claims: <strong id="count">…</strong></p>
+  <button id="go">Confirm</button>
+  <pre id="out"></pre>
+  <script>
+    const count = document.getElementById('count');
+    const out = document.getElementById('out');
+    async function refresh() {
+      const keys = await (await fetch('/api/waiting')).json();
+      count.textContent = keys.length;
+    }
+    document.getElementById('go').onclick = async () => {
+      const res = await fetch('/api/confirm', { method: 'POST' });
+      const keys = await res.json();
+      out.textContent = keys.length
+        ? keys.map(k => '\u2705 Adjuster confirmed').join('\n')
+        : '';
+      count.textContent = 0;
+      setTimeout(refresh, 1000);
+    };
+    refresh();
+  </script>
+</body>
+</html>
